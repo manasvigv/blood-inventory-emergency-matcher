@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { SignJWT, jwtVerify } from "jose";
 
 export type Role = "admin" | "lab" | "hospital" | "donor";
 export const ROLES: Role[] = ["admin", "lab", "hospital", "donor"];
@@ -13,18 +14,57 @@ export interface Session {
   hospitalId?: number | null; // set when role = hospital
 }
 
-// ---------------------------------------------------------------------------------------------
-// SHARED CONTRACT between Member A and Member B.
-//
-// Member B owns authentication (users table, bcrypt, signed session cookie, route protection).
-// Until that lands, this file uses an UNSIGNED development cookie picked on /login so every
-// module can be built and demoed per role. Member B replaces the body of getSession() (and the
-// /login page) — everything else in the app only depends on the Session shape above.
-// ---------------------------------------------------------------------------------------------
+export const SESSION_COOKIE = "ll_session";
 export const DEV_SESSION_COOKIE = "ll_dev_session";
 
+function getSecretKey() {
+  const secret = process.env.SESSION_SECRET || "LifeLineSessionSecret2026_UseOnlyForLocalDevelopment_8xK9pQ2";
+  return new TextEncoder().encode(secret);
+}
+
+export async function createSessionToken(session: Session): Promise<string> {
+  return new SignJWT({
+    userId: session.userId,
+    role: session.role,
+    name: session.name,
+    donorId: session.donorId ?? null,
+    hospitalId: session.hospitalId ?? null,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("8h")
+    .sign(getSecretKey());
+}
+
+export async function verifySessionToken(token: string): Promise<Session | null> {
+  try {
+    const { payload } = await jwtVerify(token, getSecretKey());
+    const role = payload.role as Role;
+    if (!ROLES.includes(role)) return null;
+    return {
+      userId: typeof payload.userId === "number" ? payload.userId : null,
+      role,
+      name: String(payload.name || role),
+      donorId: typeof payload.donorId === "number" ? payload.donorId : undefined,
+      hospitalId: typeof payload.hospitalId === "number" ? payload.hospitalId : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function getSession(): Promise<Session | null> {
-  const raw = (await cookies()).get(DEV_SESSION_COOKIE)?.value;
+  const cookieStore = await cookies();
+
+  // 1. Signed JWT session cookie (Member B authentication)
+  const signedToken = cookieStore.get(SESSION_COOKIE)?.value;
+  if (signedToken) {
+    const session = await verifySessionToken(signedToken);
+    if (session) return session;
+  }
+
+  // 2. Fallback to development session cookie if present
+  const raw = cookieStore.get(DEV_SESSION_COOKIE)?.value;
   if (!raw) return null;
   try {
     const s = JSON.parse(raw) as Session;
@@ -60,9 +100,12 @@ export async function requireApiRole(...allowed: Role[]): Promise<Session> {
 export async function updateSession(patch: Partial<Session>) {
   const current = await getSession();
   if (!current) return;
-  (await cookies()).set(DEV_SESSION_COOKIE, JSON.stringify({ ...current, ...patch }), {
+  const updated: Session = { ...current, ...patch };
+  const token = await createSessionToken(updated);
+  (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
+    maxAge: 60 * 60 * 8,
   });
 }

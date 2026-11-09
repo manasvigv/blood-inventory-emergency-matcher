@@ -1,5 +1,3 @@
-// Loads ~12 months of sample history into a freshly reset database.
-//   npm run db:reset && npm run db:seed
 import { MongoClient } from "mongodb";
 import { initMongo } from "../mongo-init.mjs";
 import { seedDonorsAndDonations } from "./a-donors-donations.mjs";
@@ -18,7 +16,7 @@ try {
   const apheresis = a.donations.filter((d) => d.type === "plateletpheresis").length;
   console.log(`  ${a.donors.length} donors, ${a.donations.length} donations (${apheresis} apheresis), ${a.recallCount} recall calls`);
 
-  console.log("Member B (starter): hospitals, users, tests, requests, issues ...");
+  console.log("Member B: hospitals, users, tests, requests, issues ...");
   const b = await seedHospitalActivity(conn);
   console.log(`  ${b.hospitals} hospitals, ${b.patients} patients, ${b.users} users, ${b.tests} tests, ${b.requests} requests, ` +
     `${b.issues} units issued, ${b.pools} platelet pools, ${b.aliquotSplits} paediatric splits`);

@@ -52,6 +52,22 @@ const TEMPLATE_VALIDATOR = {
   },
 };
 
+// ---------------------------------------------------------------- Member B: audit_log collection
+const AUDIT_LOG_VALIDATOR = {
+  $jsonSchema: {
+    bsonType: "object",
+    required: ["unitId", "eventType", "actor", "timestamp"],
+    properties: {
+      unitId: { bsonType: "int", description: "blood_component.unit_id in MySQL" },
+      unitCode: { bsonType: "string" },
+      eventType: { enum: ["collected", "tested", "status_change", "reserved", "issued", "recalled", "discarded", "expired"] },
+      actor: { bsonType: "string" },
+      details: { bsonType: "object" },
+      timestamp: { bsonType: "date" },
+    },
+  },
+};
+
 async function ensureCollection(db, name, validator) {
   const exists = await db.listCollections({ name }).hasNext();
   if (exists) await db.command({ collMod: name, validator, validationLevel: "strict" });
@@ -74,7 +90,12 @@ export async function initMongo(db) {
     { upsert: true },
   );
 
-  // ---------------------------------------------------------- Member B: audit_log goes here
+  // ---------------------------------------------------------- Member B: audit_log
+  await ensureCollection(db, "audit_log", AUDIT_LOG_VALIDATOR);
+  const audit = db.collection("audit_log");
+  await audit.createIndex({ unitId: 1, timestamp: -1 });
+  await audit.createIndex({ eventType: 1, timestamp: -1 });
+  await audit.createIndex({ timestamp: -1 });
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

@@ -25,6 +25,7 @@ export const NAV: NavItem[] = [
   { href: "/requests", label: "Requests", roles: ["admin", "hospital"], owner: "B" },
   { href: "/emergency", label: "Emergency bundle", roles: ["admin", "hospital"], owner: "B" },
   { href: "/safety-recall", label: "Safety recall", roles: ["admin"], owner: "B" },
+  { href: "/audit", label: "Unit audit log", roles: ["admin", "lab"], owner: "B" },
 ];
 
 export const HOME: Record<Role, string> = {

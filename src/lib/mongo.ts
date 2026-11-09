@@ -18,3 +18,5 @@ export async function mongo(): Promise<Db> {
   g.__llMongo ??= new MongoClient(uri, { serverSelectionTimeoutMS: 5000 }).connect();
   return (await g.__llMongo).db(process.env.MONGODB_DB ?? "lifeline");
 }
+
+export const getMongo = mongo;

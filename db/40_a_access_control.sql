@@ -55,6 +55,7 @@ GRANT SELECT, INSERT, UPDATE ON lifeline.donation       TO ll_role_lab;
 GRANT SELECT, INSERT, UPDATE ON lifeline.blood_component TO ll_role_lab;
 GRANT SELECT, INSERT, UPDATE ON lifeline.recall_contact TO ll_role_lab;
 GRANT SELECT, INSERT, UPDATE ON lifeline.test_result    TO ll_role_lab;
+GRANT EXECUTE ON PROCEDURE lifeline.sp_trace_safety_recall TO ll_role_lab;
 GRANT SELECT ON lifeline.v_donor_eligibility  TO ll_role_lab;
 GRANT SELECT ON lifeline.v_current_stock      TO ll_role_lab;
 GRANT SELECT ON lifeline.v_shortage_forecast  TO ll_role_lab;

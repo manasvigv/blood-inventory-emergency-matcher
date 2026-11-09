@@ -35,13 +35,19 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 </div>
               )}
             </div>
-            {session && (
+            {session ? (
               <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:overflow-visible">
                 <NavLinks items={items.map(({ href, label, owner }) => ({ href, label, owner }))} />
                 <Link href="/login" className="mt-2 rounded-md px-3 py-2 text-sm whitespace-nowrap text-muted hover:bg-background md:mt-6">
                   Switch user
                 </Link>
               </nav>
+            ) : (
+              <div className="px-5 py-4">
+                <Link href="/login" className="inline-block rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
+                  Sign in →
+                </Link>
+              </div>
             )}
           </aside>
           <main className="min-w-0 flex-1 px-4 py-6 md:px-8">{children}</main>
